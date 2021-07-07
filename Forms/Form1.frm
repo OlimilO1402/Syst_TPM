@@ -5,17 +5,18 @@ Begin VB.Form Form1
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   4560
+   Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   3015
    ScaleWidth      =   4560
    StartUpPosition =   3  'Windows-Standard
    Begin VB.CommandButton BtnIsTPMActive 
-      Caption         =   "TPM active?"
+      Caption         =   "Is Trusted-Platform-Module active?"
       Height          =   495
       Left            =   480
       TabIndex        =   0
       Top             =   360
-      Width           =   2175
+      Width           =   3495
    End
 End
 Attribute VB_Name = "Form1"
@@ -28,7 +29,7 @@ Private Declare Function AppRunsAsAdmin Lib "shell32" Alias "#680" () As Integer
 
 Private Sub BtnIsTPMActive_Click()
     If Not IsAdmin Then
-        If MsgBox("You must run the applicatiOn as administrator!" & vbCrLf & "Check anyway?", vbOKCancel) = vbCancel Then Exit Sub
+        If MsgBox("You must run the application as administrator!" & vbCrLf & "Check anyway?", vbOKCancel) = vbCancel Then Exit Sub
     End If
     Dim tpm As New TrustPM
     If tpm.Handle = 0 Then MsgBox tpm.Error_ToStr
