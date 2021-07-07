@@ -9,7 +9,7 @@ Begin VB.Form Form1
    ScaleHeight     =   3015
    ScaleWidth      =   4560
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton Command1 
+   Begin VB.CommandButton BtnIsTPMActive 
       Caption         =   "TPM active?"
       Height          =   495
       Left            =   480
@@ -24,9 +24,9 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-Private Declare Function IsUserAnAdmin Lib "shell32" Alias "#680" () As Integer
+Private Declare Function AppRunsAsAdmin Lib "shell32" Alias "#680" () As Integer
 
-Private Sub Command1_Click()
+Private Sub BtnIsTPMActive_Click()
     If Not IsAdmin Then
         If MsgBox("You must run the applicatiOn as administrator!" & vbCrLf & "Check anyway?", vbOKCancel) = vbCancel Then Exit Sub
     End If
@@ -35,6 +35,6 @@ Private Sub Command1_Click()
 End Sub
 
 Public Function IsAdmin() As Boolean
-    IsAdmin = CBool(IsUserAnAdmin)
+    IsAdmin = CBool(AppRunsAsAdmin)
 End Function
 
