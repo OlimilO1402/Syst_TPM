@@ -12,7 +12,8 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-Private Const TBS_SUCCESS                  As Long = 0 '0 (0x0) '    The function was successful.
+'https://docs.microsoft.com/en-us/windows/win32/tbs/tbs-functions
+Private Const TBS_SUCCESS                  As Long = 0 '0 (0x0) ' The function was successful.
 Private Const TBS_E_BAD_PARAMETER          As Long = &H80284002 '2150121474 (0x80284002)'    One or more parameter values are not valid.
 Private Const TBS_E_INTERNAL_ERROR         As Long = &H80284001 '2150121473 (0x80284001)'    An internal software error occurred.
 Private Const TBS_E_INVALID_CONTEXT_PARAM  As Long = &H80284007 '2150121479 (0x80284007)'    A context parameter that is not valid was passed when attempting to create a TBS context.
@@ -23,6 +24,17 @@ Private Const TBS_E_SERVICE_START_PENDING  As Long = &H8028400B '2150121483 (0x8
 Private Const TBS_E_TOO_MANY_TBS_CONTEXTS  As Long = &H80284009 '2150121481 (0x80284009)'    A new context could not be created because there are too many open contexts.
 Private Const TBS_E_TPM_NOT_FOUND          As Long = &H8028400F '2150121487 (0x8028400F)'    A compatible Trusted Platform Module (TPM) Security Device cannot be found on this computer.
 Private Const TBS_CONTEXT_VERSION_ONE      As Long = 1
+'https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-hgsa/9a647388-21bc-4451-9bc2-e70a35cf61a4
+Private Const TPM_VERSION_UNKNOWN          As Long = 0
+Private Const TPM_VERSION_12               As Long = 1
+Private Const TPM_VERSION_20               As Long = 2
+
+Private Const TPM_IFTYPE_UNKNOWN           As Long = &H0        'Unknown interface type.
+Private Const TPM_IFTYPE_1                 As Long = &H1        'TPM 1.2 interface type that uses port-mapped or memory-mapped I/O.
+Private Const TPM_IFTYPE_TRUSTZONE         As Long = &H2        'TPM 2.0 TrustZone interface.
+Private Const TPM_IFTYPE_HW                As Long = &H3        'TPM 2.0 hardware interface.
+Private Const TPM_IFTYPE_EMULATOR          As Long = &H4        'TPM 2.0 software emulator interface.
+
 'Define TBS_RESULT    Alias Long
 'Define PTBS_HCONTEXT Alias Long
 'typedef struct tdTBS_CONTEXT_PARAMS {
@@ -33,21 +45,63 @@ Private Type TBS_CONTEXT_PARAMS
     version As Long
 End Type
 
+'typedef struct tdTBS_CONTEXT_PARAMS2 {
+'  UINT32 version;
+'  union {
+'    struct {
+'      UINT32 requestRaw : 1;
+'      UINT32 includeTpm12 : 1;
+'      UINT32 includeTpm20 : 1;
+'    };
+'    UINT32 asUINT32;
+'  };
+'} TBS_CONTEXT_PARAMS2, *PTBS_CONTEXT_PARAMS2;
+Private Type TBS_CONTEXT_PARAMS2
+    version      As Long
+    requestRaw   As Long ' = 1
+    includeTpm12 As Long ' = 1
+    includeTpm20 As Long ' = 1
+End Type
+
 'TBS_RESULT Tbsi_Context_Create(
 '  PCTBS_CONTEXT_PARAMS pContextParams,
 '  PTBS_HCONTEXT phContext
 ');
-Private Declare Function Tbsi_Context_Create Lib "tbs" (pContextParams As TBS_CONTEXT_PARAMS, phContext_out As Long) As Long
+Private Declare Function Tbsi_Context_Create Lib "tbs" (ByVal pContextParams As Long, phContext_out As Long) As Long
 
-Private m_ver    As TBS_CONTEXT_PARAMS
-Private m_Handle As Long
-Private m_TBS_E  As Long
+'TBS_RESULT Tbsip_Context_Close(
+'  TBS_HCONTEXT hContext
+');
+Private Declare Function Tbsip_Context_Close Lib "tbs" (ByVal hContext As Long) As Long
 
-Private Sub Class_Initialize()
-    m_ver.version = TBS_CONTEXT_VERSION_ONE
-    m_TBS_E = Tbsi_Context_Create(m_ver, m_Handle)
-    If m_TBS_E = TBS_SUCCESS Then Exit Sub
-End Sub
+
+'typedef struct _TPM_DEVICE_INFO {
+'  UINT32 structVersion;
+'  UINT32 tpmVersion;
+'  UINT32 tpmInterfaceType;
+'  UINT32 tpmImpRevision;
+'} TPM_DEVICE_INFO, *PTPM_DEVICE_INFO;
+
+Private Type TPM_DEVICE_INFO
+    structVersion    As Long
+    tpmVersion       As Long
+    tpmInterfaceType As Long
+    tpmImpRevision   As Long
+End Type
+
+'TBS_RESULT Tbsi_GetDeviceInfo(
+'  UINT32 Size,
+'  PVOID Info
+');
+Private Declare Function Tbsi_GetDeviceInfo Lib "tbs" (ByVal Size As Long, ByRef pInfo_out As TPM_DEVICE_INFO) As Long
+
+Private m_TBS_E         As Long
+
+Private m_ContextParam1 As TBS_CONTEXT_PARAMS
+Private m_ContextParam2 As TBS_CONTEXT_PARAMS2
+Private m_ContextHandle As Long
+
+Private m_TpmDeviceInfo As TPM_DEVICE_INFO
 
 Public Function Error_ToStr() As String
     Dim s As String
@@ -65,6 +119,65 @@ Public Function Error_ToStr() As String
     Error_ToStr = s
 End Function
 
-Public Property Get Handle() As Long
-    Handle = m_Handle
+Public Property Get ContextHandle() As Long
+    ContextHandle = m_ContextHandle
 End Property
+
+Private Sub Class_Terminate()
+    If m_ContextHandle Then Tbsip_Context_Close m_ContextHandle
+End Sub
+
+Public Function CheckContext1() As Boolean
+    m_ContextParam1.version = TBS_CONTEXT_VERSION_ONE
+    m_TBS_E = Tbsi_Context_Create(VarPtr(m_ContextParam1), m_ContextHandle)
+    CheckContext1 = (m_TBS_E = TBS_SUCCESS)
+End Function
+
+Public Function CheckContext2() As Boolean
+    With m_ContextParam2
+        .version = TPM_VERSION_20 'TBS_CONTEXT_VERSION_ONE
+        .requestRaw = 1
+        .includeTpm12 = 1
+        .includeTpm20 = 1
+    End With
+    m_TBS_E = Tbsi_Context_Create(VarPtr(m_ContextParam2), m_ContextHandle)
+    CheckContext2 = (m_TBS_E = TBS_SUCCESS)
+End Function
+
+Public Function CheckDeviceInfo() As Boolean
+    If m_TpmDeviceInfo.structVersion = 0 Then
+        m_TpmDeviceInfo.structVersion = TPM_VERSION_20
+    End If
+    m_TBS_E = Tbsi_GetDeviceInfo(LenB(m_TpmDeviceInfo), m_TpmDeviceInfo)
+    CheckDeviceInfo = (m_TBS_E = TBS_SUCCESS)
+End Function
+
+Public Property Get DeviceInfo_StructVer() As Long
+    DeviceInfo_StructVer = m_TpmDeviceInfo.structVersion
+End Property
+Public Property Let DeviceInfo_StructVer(ByVal Value As Long)
+    m_TpmDeviceInfo.structVersion = Value
+End Property
+
+Public Property Get DeviceInfo_TPMVersion() As Long
+    DeviceInfo_TPMVersion = m_TpmDeviceInfo.tpmVersion
+End Property
+Public Property Get DeviceInfo_TPMInterfaceType() As Long
+    DeviceInfo_TPMInterfaceType = m_TpmDeviceInfo.tpmInterfaceType
+End Property
+Public Property Get DeviceInfo_TPMImpRevision() As Long
+    DeviceInfo_TPMImpRevision = m_TpmDeviceInfo.tpmImpRevision
+End Property
+
+Public Function DeviceInfo_ToStr() As String
+    Dim s As String
+    With m_TpmDeviceInfo
+        s = s & "TpmDeviceInfo{" & vbNewLine
+        s = s & "    StructVer    : " & .structVersion & vbNewLine
+        s = s & "    TmpVersion   : " & .tpmVersion & vbNewLine
+        s = s & "    InterfaceType: " & .tpmInterfaceType & vbNewLine
+        s = s & "    ImpRevision  : " & .tpmImpRevision & vbNewLine
+        s = s & "}"
+    End With
+    DeviceInfo_ToStr = s
+End Function
