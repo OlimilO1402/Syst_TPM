@@ -20,22 +20,29 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   4215
-      Left            =   120
+      Height          =   4455
+      Left            =   0
       MultiLine       =   -1  'True
       ScrollBars      =   3  'Beides
       TabIndex        =   1
-      Text            =   "Form1.frx":1782
-      Top             =   720
-      Width           =   4335
+      Top             =   600
+      Width           =   4575
    End
    Begin VB.CommandButton BtnIsTPMActive 
-      Caption         =   "Is Trusted-Platform-Module active?"
-      Height          =   495
-      Left            =   120
+      Caption         =   "Check Trusted-Platform-Module"
+      Height          =   375
+      Left            =   720
       TabIndex        =   0
       Top             =   120
-      Width           =   4335
+      Width           =   3735
+   End
+   Begin VB.CommandButton BtnInfo 
+      Caption         =   "Info"
+      Height          =   375
+      Left            =   120
+      TabIndex        =   2
+      Top             =   120
+      Width           =   495
    End
 End
 Attribute VB_Name = "Form1"
@@ -45,6 +52,11 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 Private Declare Function AppRunsAsAdmin Lib "shell32" Alias "#680" () As Integer
+
+Private Sub BtnInfo_Click()
+    MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbNewLine & _
+           App.FileDescription, vbOKOnly Or vbInformation
+End Sub
 
 Private Sub BtnIsTPMActive_Click()
     If Not IsAdmin Then
@@ -62,3 +74,9 @@ Public Function IsAdmin() As Boolean
     IsAdmin = CBool(AppRunsAsAdmin)
 End Function
 
+Private Sub Form_Resize()
+    Dim L As Single, T As Single: T = Text1.Top
+    Dim W As Single: W = Me.ScaleWidth
+    Dim H As Single: H = Me.ScaleHeight - T
+    If W > 0 And H > 0 Then Text1.Move L, T, W, H
+End Sub
