@@ -63,8 +63,9 @@ Private Sub BtnIsTPMActive_Click()
         If MsgBox("You must run the application as administrator!" & vbCrLf & "Check anyway?", vbOKCancel) = vbCancel Then Exit Sub
     End If
     Dim tpm As New TrustPM
-    If Not tpm.CheckContext1 Then MsgBox "Check TPM-Context Version 1.2: " & vbCrLf & tpm.Error_ToStr
-    If Not tpm.CheckContext2 Then MsgBox "Check TPM-Context Version 2.0: " & vbCrLf & tpm.Error_ToStr
+    Dim s As String: s = "Check TPM-Context Version "
+    MsgBox s & "1.2: " & vbCrLf & IIf(tpm.CheckContext1, "Found!", tpm.Error_ToStr)
+    MsgBox s & "2.0: " & vbCrLf & IIf(tpm.CheckContext2, "Found!", tpm.Error_ToStr)
     
     If Not tpm.CheckDeviceInfo Then MsgBox "Check Device Info: " & vbCrLf & tpm.Error_ToStr
     Text1.Text = "Check Device Info: " & vbCrLf & tpm.DeviceInfo_ToStr

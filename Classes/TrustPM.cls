@@ -174,7 +174,7 @@ Public Function DeviceInfo_ToStr() As String
     With m_TpmDeviceInfo
         s = s & "TpmDeviceInfo{" & vbNewLine
         s = s & "    StructVer    : " & .structVersion & vbNewLine
-        s = s & "    TmpVersion   : " & .tpmVersion & vbNewLine
+        s = s & "    TpmVersion   : " & .tpmVersion & vbNewLine
         s = s & "    InterfaceType: " & .tpmInterfaceType & vbNewLine
         s = s & "    ImpRevision  : " & .tpmImpRevision & vbNewLine
         s = s & "}"
