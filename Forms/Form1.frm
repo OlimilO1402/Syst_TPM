@@ -51,7 +51,6 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-Private Declare Function AppRunsAsAdmin Lib "shell32" Alias "#680" () As Integer
 
 Private Sub BtnInfo_Click()
     MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbNewLine & _
@@ -59,7 +58,7 @@ Private Sub BtnInfo_Click()
 End Sub
 
 Private Sub BtnIsTPMActive_Click()
-    If Not IsAdmin Then
+    If Not MShell32.IsAdmin Then
         If MsgBox("You must run the application as administrator!" & vbCrLf & "Check anyway?", vbOKCancel) = vbCancel Then Exit Sub
     End If
     Dim tpm As New TrustPM
@@ -71,13 +70,9 @@ Private Sub BtnIsTPMActive_Click()
     Text1.Text = "Check Device Info: " & vbCrLf & tpm.DeviceInfo_ToStr
 End Sub
 
-Public Function IsAdmin() As Boolean
-    IsAdmin = CBool(AppRunsAsAdmin)
-End Function
-
 Private Sub Form_Resize()
-    Dim L As Single, T As Single: T = Text1.Top
+    Dim L As Single, t As Single: t = Text1.Top
     Dim W As Single: W = Me.ScaleWidth
-    Dim H As Single: H = Me.ScaleHeight - T
-    If W > 0 And H > 0 Then Text1.Move L, T, W, H
+    Dim H As Single: H = Me.ScaleHeight - t
+    If W > 0 And H > 0 Then Text1.Move L, t, W, H
 End Sub

@@ -35,6 +35,10 @@ Private Const TPM_IFTYPE_TRUSTZONE         As Long = &H2        'TPM 2.0 TrustZo
 Private Const TPM_IFTYPE_HW                As Long = &H3        'TPM 2.0 hardware interface.
 Private Const TPM_IFTYPE_EMULATOR          As Long = &H4        'TPM 2.0 software emulator interface.
 
+Private Const requestRaw   As Long = &H1 ' &B001
+Private Const includeTpm12 As Long = &H2 ' &B010
+Private Const includeTpm20 As Long = &H4 ' &B100
+
 'Define TBS_RESULT    Alias Long
 'Define PTBS_HCONTEXT Alias Long
 'typedef struct tdTBS_CONTEXT_PARAMS {
@@ -58,21 +62,22 @@ End Type
 '} TBS_CONTEXT_PARAMS2, *PTBS_CONTEXT_PARAMS2;
 Private Type TBS_CONTEXT_PARAMS2
     version      As Long
-    requestRaw   As Long ' = 1
-    includeTpm12 As Long ' = 1
-    includeTpm20 As Long ' = 1
+    'requestRaw   As Long ' = 1
+    'includeTpm12 As Long ' = 1
+    'includeTpm20 As Long ' = 1
+    asUINT32     As Long
 End Type
 
 'TBS_RESULT Tbsi_Context_Create(
 '  PCTBS_CONTEXT_PARAMS pContextParams,
 '  PTBS_HCONTEXT phContext
 ');
-Private Declare Function Tbsi_Context_Create Lib "tbs" (ByVal pContextParams As Long, phContext_out As Long) As Long
+Private Declare Function Tbsi_Context_Create Lib "tbs" (ByVal pContextParams As LongPtr, phContext_out As LongPtr) As Long
 
 'TBS_RESULT Tbsip_Context_Close(
 '  TBS_HCONTEXT hContext
 ');
-Private Declare Function Tbsip_Context_Close Lib "tbs" (ByVal hContext As Long) As Long
+Private Declare Function Tbsip_Context_Close Lib "tbs" (ByVal hContext As LongPtr) As Long
 
 
 'typedef struct _TPM_DEVICE_INFO {
@@ -99,7 +104,7 @@ Private m_TBS_E         As Long
 
 Private m_ContextParam1 As TBS_CONTEXT_PARAMS
 Private m_ContextParam2 As TBS_CONTEXT_PARAMS2
-Private m_ContextHandle As Long
+Private m_ContextHandle As LongPtr
 
 Private m_TpmDeviceInfo As TPM_DEVICE_INFO
 
@@ -136,9 +141,10 @@ End Function
 Public Function CheckContext2() As Boolean
     With m_ContextParam2
         .version = TPM_VERSION_20 'TBS_CONTEXT_VERSION_ONE
-        .requestRaw = 1
-        .includeTpm12 = 1
-        .includeTpm20 = 1
+        '.requestRaw = 4
+        '.includeTpm12 = 1
+        '.includeTpm20 = 1
+        .asUINT32 = includeTpm12 Or includeTpm20
     End With
     m_TBS_E = Tbsi_Context_Create(VarPtr(m_ContextParam2), m_ContextHandle)
     CheckContext2 = (m_TBS_E = TBS_SUCCESS)
