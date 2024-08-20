@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin VB.Form Form1 
-   Caption         =   "Form1"
+   Caption         =   "Check TPM"
    ClientHeight    =   5055
    ClientLeft      =   120
    ClientTop       =   465
@@ -52,6 +52,17 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub Form_Load()
+    Me.Caption = Me.Caption & " v" & App.Major & "." & App.Minor & "." & App.Revision
+End Sub
+
+Private Sub Form_Resize()
+    Dim L As Single, t As Single: t = Text1.Top
+    Dim W As Single: W = Me.ScaleWidth
+    Dim H As Single: H = Me.ScaleHeight - t
+    If W > 0 And H > 0 Then Text1.Move L, t, W, H
+End Sub
+
 Private Sub BtnInfo_Click()
     MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbNewLine & _
            App.FileDescription, vbOKOnly Or vbInformation
@@ -68,11 +79,4 @@ Private Sub BtnIsTPMActive_Click()
     
     If Not tpm.CheckDeviceInfo Then MsgBox "Check Device Info: " & vbCrLf & tpm.Error_ToStr
     Text1.Text = "Check Device Info: " & vbCrLf & tpm.DeviceInfo_ToStr
-End Sub
-
-Private Sub Form_Resize()
-    Dim L As Single, t As Single: t = Text1.Top
-    Dim W As Single: W = Me.ScaleWidth
-    Dim H As Single: H = Me.ScaleHeight - t
-    If W > 0 And H > 0 Then Text1.Move L, t, W, H
 End Sub
